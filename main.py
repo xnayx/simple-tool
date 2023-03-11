@@ -115,7 +115,7 @@ class options:
 
     def TicTacToe(self, initPlayer):
         ttt = TicTacToe(initPlayer)
-        ttt.init()
+        ttt.load()
 
 
 class myTool:
