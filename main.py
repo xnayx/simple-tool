@@ -12,31 +12,84 @@ def clear():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 class TicTacToe:
-    def __init__(self, initPlayer):
+    def __init__(self, initPlayer, tableSize):
         self.players = { "X": self.blue('X'), "O": self.red('O') }
 
         self.tttConfig = {
-            "board": [
-                ['1', '2', '3'],
-                ['4', '5', '6'],
-                ['7', '8', '9']
-            ],
+            "board": self.createMatrix(tableSize, tableSize),
             "winner": None,
             "gameOver": False,
             "player": self.players[initPlayer]
         }
 
-        self.positions = {
-            1: [0,0],
-            2: [0,1],
-            3: [0,2],
-            4: [1,0],
-            5: [1,1],
-            6: [1,2],
-            7: [2,0],
-            8: [2,1],
-            9: [2,2]
-        }
+        self.winning_combinations = []
+
+        self.positions = {}
+
+        self.setPositions()
+        print(self.positions)
+        print(self.winning_combinations)
+        self.setWinningCombinations()
+
+    def setPositions(self):
+        for iRow, row in enumerate(self.tttConfig["board"]):
+            
+            for iPos, pos in enumerate(row):
+                self.positions[int(pos)] = [iRow, iPos]
+    
+    def setWinningCombinations(self):
+        boardLength = len(self.tttConfig["board"])
+
+        # rectas (filas/columnas)
+
+        for i in range(boardLength):
+            row = []
+            column = []
+            for j in range(boardLength):
+                row.append(int(self.tttConfig["board"][i][j]))
+                column.append(int(self.tttConfig["board"][j][i]))
+
+            self.winning_combinations.append(row)
+            self.winning_combinations.append(column)
+
+
+        # diagonales (superior-derecha - inferior-izquierda / superior-izquierda - inferior-derecha)
+        combination = []
+
+
+        i, j = 0, 1
+
+        while i < boardLength: # izq
+            combination.append(i * boardLength + j)
+            i += 1
+            j += 1
+
+        self.winning_combinations.append(combination)
+
+        combination = []
+
+        i, j = 0, boardLength
+
+        while i < boardLength: # der
+            combination.append(i * boardLength + j)
+            i += 1
+            j -= 1
+
+        self.winning_combinations.append(combination)
+
+    def createMatrix(self, rows, columns):
+        matriz = []
+        acc = 0
+
+        for _ in range(rows):
+            row = []
+            for _ in range(columns):
+                row.append(str(acc+1))
+                acc += 1
+
+            matriz.append(row)
+
+        return matriz
 
     def blue(self, text):
         return Fore.BLUE + text + Fore.RESET
@@ -45,17 +98,17 @@ class TicTacToe:
         return Fore.RED + text + Fore.RESET
 
     def getPos(self, p):
+        print(self.positions[p][1])
         return self.tttConfig["board"][self.positions[p][0]][self.positions[p][1]]
 
     def updateTable(self, pos):
         self.tttConfig["board"][pos[0]][pos[1]] = self.players["X"] if self.tttConfig["player"] == self.players["X"] else self.players["O"]
         self.tttConfig["player"] = self.players["O"] if self.tttConfig["player"] == self.players["X"] else self.players["X"]
 
-        winning_combinations = [(1, 2, 3), (4, 5, 6), (7, 8, 9), (1, 4, 7), (2, 5, 8), (3, 6, 9), (1, 5, 9), (3, 5, 7)]
 
-        if any(self.getPos(p1) == self.getPos(p2) == self.getPos(p3) for p1, p2, p3 in winning_combinations):
+        if any(all(self.getPos(p) == self.getPos(winning_combination[0]) for p in winning_combination) for winning_combination in self.winning_combinations):
             self.tttConfig["winner"] = self.players["X"] if self.tttConfig["player"] == self.players["O"] else self.players["O"]
-            self.tttConfig["gameOver"] = True  
+            self.tttConfig["gameOver"] = True
 
         if self.tttConfig["gameOver"]:
             clear()
@@ -72,8 +125,8 @@ class TicTacToe:
         print('turn: '+str(self.tttConfig["player"]))
 
         position = int(input('Enter a position: '))
-        
-        if not [1,2,3,4,5,6,7,9].count(position):
+
+        if not list(self.positions.keys()).count(position):
             print(self.red('Invalid position'))
             sleep(2)
             self.load()
@@ -86,7 +139,6 @@ class TicTacToe:
 
             else:
                 self.updateTable(self.positions[position])
-
 
 class options:
     def __init__(self, option):
@@ -113,8 +165,8 @@ class options:
         print(Fore.MAGENTA+'First 10 results: '+Fore.GREEN)
         print('\n'.join(titles))
 
-    def TicTacToe(self, initPlayer):
-        ttt = TicTacToe(initPlayer)
+    def TicTacToe(self, initPlayer, tableSize):
+        ttt = TicTacToe(initPlayer, tableSize)
         ttt.load()
 
 
@@ -123,7 +175,7 @@ class myTool:
         self.options = options
 
     def link(self, uri, label=None):
-        if label is None: 
+        if label is None:
             label = uri
         parameters = ''
 
@@ -162,7 +214,8 @@ class myTool:
         elif response == '2':
             print(Fore.RESET)
             player = random.choice(['X','O'])
-            self.options.TicTacToe(self, player)
+            tableSize = int(input("Enter an table size: "))
+            self.options.TicTacToe(self, player, tableSize)
 
         elif response == '3':
             Fore.RESET
